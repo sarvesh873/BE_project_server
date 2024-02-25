@@ -12,7 +12,7 @@ GENDER_CHOICES = [
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
-    phone = models.CharField(max_length = 12, null = True)
+    phone = models.CharField(max_length = 10, null = True)
     salary = models.IntegerField(null=True)
     goal = models.IntegerField(null=True)
     age = models.IntegerField(null=True)
@@ -46,10 +46,18 @@ class User(AbstractUser):
 
 class Child(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    child_name = models.CharField(max_length=20, null=True)
     child_age = models.IntegerField(null=True)
     child_gender = models.CharField(max_length=10, choices=GENDER_CHOICES, null=True)
     child_edu_expi = models.IntegerField(null=True)
 
+
+class Family(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    family_name = models.CharField(max_length=20, null=True)
+    family_age = models.IntegerField(null=True)
+    family_gender = models.CharField(max_length=10, choices=GENDER_CHOICES, null=True)
+    family_med_expi = models.IntegerField(null=True)
 
 # company => id,name,returns(int),
 class Company(models.Model):

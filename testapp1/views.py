@@ -114,12 +114,17 @@ class ProfileView(generics.RetrieveAPIView,generics.UpdateAPIView):
         serializer = self.get_serializer(instance,data=request.data,partial=True)
         if (serializer.is_valid()):
             children_data = request.data.get('children', [])
+            family_data = request.data.get('family',[])
             serializer.save()  # Save the user instance first
 
             # Update or create child instances
             Child.objects.filter(user=instance).delete()  # Delete existing children
             for child_data in children_data:
                 Child.objects.create(user=instance, **child_data)
+            
+            Family.objects.filter(user=instance).delete()  # Delete existing Family
+            for fami_data in family_data:
+                Family.objects.create(user=instance, **fami_data)
             # print(serializer.data)
             return super().update(request, *args, **kwargs)
         

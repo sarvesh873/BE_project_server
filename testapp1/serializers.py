@@ -50,20 +50,33 @@ class UserSerializer(serializers.ModelSerializer):
 class ChildSerializer(serializers.ModelSerializer):
     class Meta:
         model = Child
-        fields = ['child_age', 'child_gender', 'child_edu_expi']
+        fields = ['child_name', 'child_age', 'child_gender', 'child_edu_expi']
         extra_kwargs = {
+            'child_name' : {'required' : True},
             'child_age': {'required': True},
             'child_gender': {'required': True},
             'child_edu_expi': {'required': True},
+        }
+
+class familySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Family
+        fields = ['family_name', 'family_age', 'family_gender', 'family_med_expi']
+        extra_kwargs = {
+            'family_name' : {'required' : True},
+            'family_age': {'required': True},
+            'family_gender': {'required': True},
+            'family_edu_expi': {'required': True},
         }
 
 class ProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(read_only=True)
     phone = serializers.CharField(max_length=20, read_only=True)
     username = serializers.CharField(max_length=20,read_only=True)
-    is_admin = serializers.BooleanField(source='is_staff', read_only=True)
-    is_superuser = serializers.BooleanField(read_only=True)
+    # is_admin = serializers.BooleanField(source='is_staff', read_only=True)
+    # is_superuser = serializers.BooleanField(read_only=True)
     children = serializers.SerializerMethodField()
+    family = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -72,8 +85,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             "full_name",
             "email", 
             "phone", 
-            "is_admin",
-            "is_superuser",
+            # "is_admin",
+            # "is_superuser",
             "salary",
             "goal",
             "age",
@@ -85,7 +98,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             "has_loan",
             "loan_duration",
             "loan_emi",
-            "children"  # Include the child information in the serializer
+            "children",  # Include the child information in the serializer
+            "family"
         ]
 
     def get_children(self, obj):
@@ -93,6 +107,12 @@ class ProfileSerializer(serializers.ModelSerializer):
         children_qs = Child.objects.filter(user=obj)
         children_serializer = ChildSerializer(children_qs, many=True)
         return children_serializer.data
+
+    def get_family(self, obj):
+        # Retrieve and serialize child data
+        family_qs = Family.objects.filter(user=obj)
+        family_serializer = familySerializer(family_qs, many=True)
+        return family_serializer.data
 
     def validate_salary(self, value):
         if not value:
@@ -108,20 +128,28 @@ class ProfileSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         children_data = validated_data.pop('children', [])
+        family_data = validated_data.pop('family',[])
         user = super(ProfileSerializer, self).create(validated_data)
 
         for child_data in children_data:
             Child.objects.create(user=user, **child_data)
+        
+        for fami_data in family_data:
+            Family.objects.create(user=user, **fami_data)
 
         return user
 
     def update(self, instance, validated_data):
         children_data = validated_data.pop('children', [])
+        family_data = validated_data.pop('family',[])
         instance = super(ProfileSerializer, self).update(instance, validated_data)
 
         # Update or create child instances
         for child_data in children_data:
             child, created = Child.objects.update_or_create(user=instance, defaults=child_data)
+
+        for fami_data in family_data:
+            family, created = Family.objects.update_or_create(user=instance, defaults=fami_data)
         
         return instance
 
