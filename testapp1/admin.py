@@ -14,4 +14,9 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(Child)
 class ChildAdmin(admin.ModelAdmin):
-    list_display = ("user", "child_age", "child_edu_expi")
+    list_display = ("user","child_name", "child_age","child_gender", "child_edu_expi")
+
+
+@admin.register(Family)
+class ChildAdmin(admin.ModelAdmin):
+    list_display = ("user","family_name", "family_age","family_gender", "family_med_expi")

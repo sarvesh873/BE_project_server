@@ -66,7 +66,7 @@ class familySerializer(serializers.ModelSerializer):
             'family_name' : {'required' : True},
             'family_age': {'required': True},
             'family_gender': {'required': True},
-            'family_edu_expi': {'required': True},
+            'family_med_expi': {'required': True},
         }
 
 class ProfileSerializer(serializers.ModelSerializer):
