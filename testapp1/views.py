@@ -17,7 +17,7 @@ from .models import *
 import hashlib
 from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Sum
-
+import requests
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
@@ -142,21 +142,116 @@ class LogoutAPIView(generics.GenericAPIView):
         serializer.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
 
-class CompanyList(generics.ListAPIView):
-    serializer_class = CompanyMatchSerializer
-    queryset = Company.objects.all()
+
+# MutualFundsMatching to user data    
+class MutualFundsMatch(generics.GenericAPIView):
+    serializer_class = MutualFundsMatchSerializer
     permission_classes = [IsAuthenticated]
-    
-    
-class CompanyMatch(generics.ListAPIView):
-    serializer_class = CompanyMatchSerializer
+
+    def post(self, request):
+        # Get data from the request
+        input_returns = request.data.get('input_returns')
+        input_days = request.data.get('input_days')
+        input_amt = request.data.get('input_amt')
+        goal = self.request.user.goal
+        input_risk = request.data.get('input_risk')
+        input_cat = request.data.get('input_cat')
+
+        url = FundUrls.objects.get(name='mutualfundmatch').url
+
+        # Send an HTTP GET request to the URL
+        response = requests.get(url)
+        # Check if the request was successful (status code 200)
+        if response.status_code == 200:
+            # Extract JSON data from the response
+            data = response.json()
+            # List to store selected entries
+            selected_entries = []
+            # Iterate over the schemes in the JSON data
+            for scheme in data["mfSchemeMiniList"]:
+                scheme_id = scheme["sId"]
+                scheme_data = data["mfSchemeCalculatorReturnMap"].get(str(scheme_id))
+                
+                # Check if scheme data exists and if SIP returns for 365 days meets the condition
+                if scheme_data:
+                    sip_returns = scheme_data[input_returns].get(input_days)
+                    if sip_returns: # Check if SIP returns 
+                            if not input_risk or input_risk in scheme["rskratpoint"]:
+                                # If input_cat is not provided or if the scheme category matches input_cat
+                                if not input_cat or scheme["pCat"] == input_cat:
+                                    # Calculate expected return for expected year SIP
+                                    expected_return = sip_returns * (input_amt / 1000)  # SIP amount / 1000
+                                    if expected_return >= goal:  
+                                        xirr_value = scheme_data["xirrDurationWise"].get(input_days, 0) 
+                                        # print(xirr_value)
+                                        selected_entries.append({
+                                            "scheme_id": scheme_id,
+                                            "scheme_name": scheme["name"],
+                                            "asSz": scheme["asSz"],
+                                            "rtnDet_1": scheme["rtnDet"].get("1", 0),
+                                            "rskRt": scheme["rskRt"],
+                                            "rtnRt": scheme["rtnRt"],
+                                            "rt": scheme["rt"],
+                                            "lNv": scheme["lNv"],
+                                            "sdWebUrl": "https://www.etmoney.com/"+scheme["sdWebUrl"],
+                                            "logo": scheme["logo"],
+                                            "etmRnk": scheme["etmRnk"],
+                                            "conRt": scheme["conRt"],
+                                            "expRat": scheme["expRat"],
+                                            "pCat":scheme["pCat"],
+                                            "assetSizeFor": scheme["assetSizeFor"].replace("&#8377;", "₹ "),
+                                            "consistencyRating": scheme["consistencyRating"],
+                                            "rskratpoint": scheme["rskratpoint"],
+                                            "schemeAge": scheme["schemeAge"],
+                                            "catDispName": scheme["catDispName"],
+                                            "performanceRank": {
+                                                "rank": scheme["performanceRanking"]["rank"],
+                                                "rankOutOf": scheme["performanceRanking"]["rankOutOf"]
+                                            },
+                                            "returnpa":"{:.2f}%".format(xirr_value * 100)
+                                        })
+                                        selected_entries.sort(key=lambda x: x["returnpa"], reverse=True)
+            serializer = MutualFundsMatchSerializer(selected_entries, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response("Failed to retrieve data", status=response.status_code)
+        
+
+# All available MutualFundsList
+class MutualFundsList(generics.ListAPIView):
+    serializer_class = MutualFundsListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        goal = self.request.user.goal
-        return Company.objects.filter(returns__gte=goal)
+        d_url = FundUrls.objects.get(name='mutualfundlist').url
 
-    
-    
+        size = self.request.query_params.get('size', 20)  # Default size is 20
+        url = f"{d_url}?size={size}"
+
+        # Send an HTTP GET request to the URL
+        response = requests.get(url)
+        # Total funds are 1139 ,funds with hybrid category are 171 ,funds with debt category are 387,funds with EQUITY category are 555  
+        # COMMODITIES(GOLD INVESTMENT) 22 ,OTHERS 4(ssue with the data of this scheme)
+        # Check if the request was successful (status code 200)
+        if response.status_code == 200:
+            # Extract JSON data from the response
+            data = response.json()
+            pCat = self.request.query_params.get('pCat')
+
+            # If pCat is provided, filter based on pCat
+            if pCat:
+                filtered_funds = [fund for fund in data.get("mfSchemeMiniList", []) if fund.get('pCat') == pCat]
+                return filtered_funds
+            else:
+                # Return all funds if pCat is not provided the list of companies from the JSON data
+                return data.get("mfSchemeMiniList", [])
+
+        else:
+            return Response("Failed to retrieve data", status=response.status_code)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+   

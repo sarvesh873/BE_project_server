@@ -171,10 +171,76 @@ class LogoutSerializer(serializers.Serializer):
              raise serializers.ValidationError({'detail': 'Token is expired or invalid'})
         
 
-class CompanyMatchSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Company
-        fields = [
-            "id",
-            "name","returns"
-        ]
+# class CompanyMatchSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Company
+#         fields = [
+#             "id",
+#             "name","returns"
+#         ]
+
+class MutualFundsMatchSerializer(serializers.Serializer):
+    scheme_id = serializers.IntegerField()
+    scheme_name = serializers.CharField()
+    asSz = serializers.CharField()
+    rtnDet_1 = serializers.CharField()
+    rskRt = serializers.CharField()
+    rtnRt = serializers.CharField()
+    rt = serializers.CharField()
+    lNv = serializers.CharField()
+    sdWebUrl = serializers.CharField()
+    logo = serializers.CharField()
+    etmRnk = serializers.IntegerField()
+    conRt = serializers.FloatField()
+    expRat = serializers.FloatField()
+    assetSizeFor = serializers.CharField()
+    pCat = serializers.CharField()
+    consistencyRating = serializers.CharField()
+    rskratpoint = serializers.CharField()
+    schemeAge = serializers.CharField()
+    catDispName = serializers.CharField()
+    performanceRank = serializers.DictField(child=serializers.IntegerField())
+    returnpa = serializers.CharField() 
+
+
+class MutualFundsListSerializer(serializers.Serializer):
+    sId = serializers.IntegerField()
+    oId = serializers.IntegerField()
+    aId = serializers.IntegerField()
+    name = serializers.CharField()
+    amcName = serializers.CharField()
+    lkn = serializers.BooleanField()
+    lockinDays = serializers.IntegerField()
+    isD = serializers.BooleanField()
+    isBuyableV2 = serializers.BooleanField()
+    isDiscoverable = serializers.BooleanField()
+    nonDiscoverableReason = serializers.CharField()
+    asSz = serializers.FloatField()
+    rtnDet = serializers.DictField()
+    rskRt = serializers.IntegerField()
+    rtnRt = serializers.IntegerField()
+    rt = serializers.IntegerField()
+    lNv = serializers.FloatField()
+    sdWebUrl = serializers.CharField()
+    parName = serializers.CharField()
+    etmCat = serializers.IntegerField()
+    logo = serializers.URLField()
+    etmRnk = serializers.IntegerField()
+    conRt = serializers.IntegerField()
+    expRat = serializers.FloatField()
+    lDoDt = serializers.DictField()
+    strtDt = serializers.DictField()
+    catScCnt = serializers.IntegerField()
+    dbldays = serializers.CharField()
+    assetSizeFor = serializers.CharField()
+    consistencyRating = serializers.IntegerField()
+    rskratpoint = serializers.ListField(child=serializers.CharField())
+    schemeAge = serializers.CharField()
+    pCatURL = serializers.CharField()
+    pCat = serializers.CharField()
+    catURL = serializers.CharField()
+    catDispName = serializers.CharField()
+    etmRankDispTheme = serializers.CharField()
+    expRatStr = serializers.CharField()
+    defultDuration = serializers.IntegerField()
+    performanceRanking = serializers.DictField()

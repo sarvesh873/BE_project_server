@@ -20,3 +20,7 @@ class ChildAdmin(admin.ModelAdmin):
 @admin.register(Family)
 class ChildAdmin(admin.ModelAdmin):
     list_display = ("user","family_name", "family_age","family_gender", "family_med_expi")
+
+@admin.register(FundUrls)
+class UrlsAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "url")

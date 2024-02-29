@@ -67,3 +67,9 @@ class Company(models.Model):
     def __str__(self) -> str:
         return f"{self.name}"
 
+class FundUrls(models.Model):
+    name = models.CharField(max_length=15)
+    url = models.URLField() 
+
+    def __str__(self) -> str:
+        return f"{self.name}"
