@@ -148,11 +148,26 @@ class LogoutAPIView(generics.GenericAPIView):
 class MutualFundsMatch(generics.GenericAPIView):
     serializer_class = MutualFundsMatchSerializer
     permission_classes = [IsAuthenticated]
+    # function to convert the input duration into days as per our api requirement
+    def convert_to_days(input_string):
+        parts = input_string.lower().split()
+        duration = int(parts[0])
+        unit = parts[1]
+
+        if unit == "month" or unit == "months":
+            days = str(duration * 30)
+        elif unit == "year" or unit == "years":
+            days = str(duration * 365)
+        else:
+            raise ValueError("Invalid unit. Please use 'months' or 'years'.")
+
+        return days
 
     def post(self, request):
         # Get data from the request
         input_returns = request.data.get('input_returns')
-        input_days = request.data.get('input_days')
+        input_duration = request.data.get('input_duration')
+        input_days = MutualFundsMatch.convert_to_days(input_duration)
         input_amt = request.data.get('input_amt')
         goal = self.request.user.goal
         input_risk = request.data.get('input_risk')
