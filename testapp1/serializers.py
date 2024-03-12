@@ -2,6 +2,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from .models import *
+from datetime import datetime
 
 class TokenPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -244,3 +245,113 @@ class MutualFundsListSerializer(serializers.Serializer):
     expRatStr = serializers.CharField()
     defultDuration = serializers.IntegerField()
     performanceRanking = serializers.DictField()
+
+class FixedDepositSerializer(serializers.Serializer):
+    id=serializers.IntegerField()
+    partnerType = serializers.CharField()
+    institutionType = serializers.CharField()
+    heading = serializers.CharField()
+    logoUrl = serializers.URLField()
+    subHeading = serializers.CharField()
+    description = serializers.CharField()
+    featuresHeading = serializers.CharField()
+    interestRatesRange = serializers.CharField()
+    minimumDeposit = serializers.CharField()
+    maximumDeposit = serializers.CharField()
+    lockIn = serializers.CharField()
+    tenure = serializers.CharField()
+    minimumInterestRate = serializers.FloatField()
+    maximumInterestRate = serializers.FloatField()
+    minimumInterestRateSeniorCitizens = serializers.FloatField()
+    maximumInterestRateSeniorCitizens = serializers.FloatField()
+    additionalInterestForSeniorCitizen = serializers.CharField()
+    etlink = serializers.URLField()
+    lastRevisedDate = serializers.CharField()
+    lastRevisedDateAbove2Cr = serializers.CharField()
+    partnerDetailsHTML = serializers.CharField()
+    metadataTitle = serializers.CharField()
+    metadataDescription = serializers.CharField()
+
+    class Meta:
+        model = FDPartner
+        fields = '__all__'
+
+class InterestRateDetailSerializer(serializers.Serializer):
+    interestGeneralPublic = serializers.FloatField()
+    interestSeniorCitizen = serializers.FloatField()
+    tenure = serializers.CharField()
+    class Meta:
+        model = InterestRateDetail
+        fields = ['interestGeneralPublic', 'interestSeniorCitizen', 'tenure']
+
+class InterestRateSerializer(serializers.Serializer):
+    category = serializers.CharField()
+    categoryName = serializers.CharField()
+    interestRatesList = InterestRateDetailSerializer(many=True)
+    class Meta:
+        model = InterestRate
+        fields = ['category', 'categoryName', 'interestRatesList']
+
+class FAQSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    description = serializers.CharField()
+    bulletPoints = serializers.ListField(child=serializers.CharField(), required=False)
+    class Meta:
+        model = FAQ
+        fields = ['title', 'description', 'bulletPoints']
+
+class FDPartnerSerializer(serializers.Serializer):
+    id=serializers.IntegerField()
+    partnerType = serializers.CharField()
+    institutionType = serializers.CharField()
+    heading = serializers.CharField()
+    logoUrl = serializers.URLField()
+    subHeading = serializers.CharField()
+    description = serializers.CharField(allow_null=True,required=False)
+    featuresHeading = serializers.CharField()
+    interestRatesRange = serializers.CharField()
+    minimumDeposit = serializers.CharField()
+    maximumDeposit = serializers.CharField()
+    lockIn = serializers.CharField()
+    tenure = serializers.CharField()
+    minimumInterestRate = serializers.FloatField()
+    maximumInterestRate = serializers.FloatField()
+    minimumInterestRateSeniorCitizens = serializers.FloatField()
+    maximumInterestRateSeniorCitizens = serializers.FloatField()
+    additionalInterestForSeniorCitizen = serializers.CharField()
+    etlink = serializers.URLField()
+    interestRates = InterestRateSerializer(many=True)
+    lastRevisedDate = serializers.DateField()
+    lastRevisedDateAbove2Cr = serializers.DateField()
+    partnerDetailsHTML = serializers.CharField()
+    faqs = FAQSerializer(many=True)
+    metadataTitle = serializers.CharField()
+    metadataDescription = serializers.CharField()
+
+    def create(self, validated_data):
+        interest_rates_data = validated_data.pop('interestRates')
+        faqs_data = validated_data.pop('faqs')
+
+        fd_partner = FDPartner.objects.create(**validated_data)
+
+        for interest_rate_data in interest_rates_data:
+            interest_rate_details_data = interest_rate_data.pop('interestRatesList')
+            interest_rate = InterestRate.objects.create(fd_partner=fd_partner, **interest_rate_data)
+            for detail_data in interest_rate_details_data:
+                InterestRateDetail.objects.create(interest_rate=interest_rate, **detail_data)
+
+        for faq_data in faqs_data:
+            FAQ.objects.create(fd_partner=fd_partner, **faq_data)
+
+        return fd_partner
+    
+    def to_internal_value(self, data):
+        if 'lastRevisedDate' in data:
+            data['lastRevisedDate'] = datetime.strptime(data['lastRevisedDate'], '%d %b %Y').strftime('%Y-%m-%d')
+        if 'lastRevisedDateAbove2Cr' in data:
+            data['lastRevisedDateAbove2Cr'] = datetime.strptime(data['lastRevisedDateAbove2Cr'], '%d %b %Y').strftime('%Y-%m-%d')
+        return super().to_internal_value(data)
+    
+    class Meta:
+        model = FDPartner
+        fields = ['partnerType', 'institutionType', 'heading', 'logoUrl', 'subHeading', 'description', 'featuresHeading', 'interestRatesRange', 'minimumDeposit', 'maximumDeposit', 'lockIn', 'tenure', 'minimumInterestRate', 'maximumInterestRate', 'minimumInterestRateSeniorCitizens', 'maximumInterestRateSeniorCitizens', 'additionalInterestForSeniorCitizen', 'etlink', 'lastRevisedDate', 'lastRevisedDateAbove2Cr', 'partnerDetailsHTML', 'metadataTitle', 'metadataDescription', 'interestRates', 'faqs']

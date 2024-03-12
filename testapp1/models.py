@@ -73,3 +73,48 @@ class FundUrls(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name}"
+
+
+class FDPartner(models.Model):
+    id=models.IntegerField(primary_key=True)
+    partnerType = models.CharField(max_length=100, null=True)
+    institutionType = models.CharField(max_length=100, null=True)
+    heading = models.CharField(max_length=255, null=True)
+    logoUrl = models.URLField(null=True)
+    subHeading = models.CharField(max_length=100, null=True)
+    description = models.TextField(null=True)
+    featuresHeading = models.CharField(max_length=255, null=True)
+    interestRatesRange = models.CharField(max_length=100, null=True)
+    minimumDeposit = models.CharField(max_length=100, null=True)
+    maximumDeposit = models.CharField(max_length=100, null=True)
+    lockIn = models.CharField(max_length=100, null=True)
+    tenure = models.CharField(max_length=100, null=True)
+    minimumInterestRate = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    maximumInterestRate = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    minimumInterestRateSeniorCitizens = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    maximumInterestRateSeniorCitizens = models.DecimalField(max_digits=5, decimal_places=2, null=True)
+    additionalInterestForSeniorCitizen = models.CharField(max_length=100, null=True)
+    etlink = models.URLField(null=True)
+    lastRevisedDate = models.CharField(max_length=100,null=True)
+    lastRevisedDateAbove2Cr = models.CharField(max_length=100,null=True)
+    partnerDetailsHTML = models.TextField(null=True)
+    metadataTitle = models.CharField(max_length=255, null=True)
+    metadataDescription = models.CharField(max_length=255, null=True)
+
+class InterestRate(models.Model):
+    category = models.CharField(max_length=100)
+    categoryName = models.CharField(max_length=255)
+    fd_partner = models.ForeignKey(FDPartner, related_name='interestRates', on_delete=models.CASCADE)
+
+class InterestRateDetail(models.Model):
+    interestGeneralPublic = models.DecimalField(max_digits=5, decimal_places=2)
+    interestSeniorCitizen = models.DecimalField(max_digits=5, decimal_places=2)
+    tenure = models.CharField(max_length=100)
+    interest_rate = models.ForeignKey(InterestRate, related_name='interestRatesList', on_delete=models.CASCADE)
+
+
+class FAQ(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    bulletPoints = models.TextField(null=True) 
+    fd_partner = models.ForeignKey(FDPartner, related_name='faqs', on_delete=models.CASCADE)

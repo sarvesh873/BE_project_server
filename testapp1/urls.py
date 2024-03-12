@@ -12,5 +12,8 @@ urlpatterns = [
     # path('password-reset/', PasswordResetView.as_view(), name='password_reset'),
     # path('password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('mutual-funds-match/', MutualFundsMatch.as_view(), name="mutual_funds_match"),
-    path('all-mf-listing/', MutualFundsList.as_view(), name="mutual_funds_list")
+    path('all-mf-listing/', MutualFundsList.as_view(), name="mutual_funds_list"),
+    path('fixed_deposit-match/', FixedDepositMatch.as_view(), name="fixed_deposit_match"),
+     path('all-fd-listing/', FixedDepositList.as_view(), name='fixed_deposit_list'),
+     path('create-fd-partner/', FDPartnerCreateAPIView.as_view(), name='create_fd_partner'),
 ]

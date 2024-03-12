@@ -14,7 +14,7 @@ from rest_framework.exceptions import ParseError
 from rest_framework.views import APIView
 from .serializers import *
 from .models import *
-import hashlib
+import hashlib, json
 from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Sum
 import requests
@@ -175,9 +175,7 @@ class MutualFundsMatch(generics.GenericAPIView):
 
         url = FundUrls.objects.get(name='mutualfundmatch').url
 
-        # Send an HTTP GET request to the URL
         response = requests.get(url)
-        # Check if the request was successful (status code 200)
         if response.status_code == 200:
             # Extract JSON data from the response
             data = response.json()
@@ -244,13 +242,11 @@ class MutualFundsList(generics.ListAPIView):
         size = self.request.query_params.get('size', 20)  # Default size is 20
         url = f"{d_url}?size={size}"
 
-        # Send an HTTP GET request to the URL
         response = requests.get(url)
         # Total funds are 1139 ,funds with hybrid category are 171 ,funds with debt category are 387,funds with EQUITY category are 555  
-        # COMMODITIES(GOLD INVESTMENT) 22 ,OTHERS 4(ssue with the data of this scheme)
+        # COMMODITIES(GOLD INVESTMENT) 22 ,OTHERS 4(issue with the data of this scheme)
         # Check if the request was successful (status code 200)
         if response.status_code == 200:
-            # Extract JSON data from the response
             data = response.json()
             pCat = self.request.query_params.get('pCat')
 
@@ -269,4 +265,106 @@ class MutualFundsList(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-   
+
+
+# All available Fixed Deposits
+class FixedDepositList(generics.ListAPIView):
+    queryset = FDPartner.objects.all()  # Retrieve all objects from FDPartner model
+    # we have 16 fdpartners with all of the data
+    serializer_class = FixedDepositSerializer 
+
+# to create new Fixed Deposit
+class FDPartnerCreateAPIView(APIView):
+    serializer_class = FDPartnerSerializer
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data.get('fdPartnerDetails', []), many=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            error_message = {"error": str(e)}
+            return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Fixed Deposits to user data   
+class FixedDepositMatch(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = FDPartnerSerializer
+
+    #function to check if the users duration is withun the fund tenure  
+    def is_within_tenure(input_duration: str, tenure: str) -> bool:
+        # Extract lower and upper bounds from the tenure string
+        tenure_values = [int(value.split()[0]) for value in tenure.split(' - ')]
+        # If tenure is specified in days, convert it to years
+        if 'yr' not in tenure:
+            tenure_values = [value / 365 for value in tenure_values]
+        # Extract numerical value and units from input duration
+        input_value, input_unit = input_duration.split()
+        # Convert input duration to months if specified in years
+        if input_unit == 'yrs':
+            input_value = int(input_value) * 12
+        elif input_unit == 'months':
+            input_value = int(input_value)
+        # Check if the input value falls within the range
+        if len(tenure_values) == 1:  # Only one value provided (no upper bound)
+            return int(input_value) == int(tenure_values[0] * 12)
+        else:
+            return int(tenure_values[0] * 12) <= int(input_value) <= int(tenure_values[1] * 12)
+    # Example usage: input_duration = "1 yrs" tenure = "365 - 449" print(is_within_tenure(input_duration, tenure))  # Output: True input_duration = "5 yrs" tenure = "1 yr - 10 yrs" print(is_within_tenure(input_duration, tenure))  # Output: True input_duration = "46 months" tenure = "1096 - 1679" print(is_within_tenure(input_duration, tenure))  # Output: True
+
+    def post(self, request):
+        try:
+            data = request.data
+            input_duration = data.get('input_duration')
+            input_amt = data.get('input_amt')
+            goal = self.request.user.goal
+            user_age = self.request.user.age
+
+            selected_entries_fd = []
+            unique_ids = set()
+            # Filter FDPartner objects based on specific criteria if needed
+            schemes = FDPartner.objects.all()
+
+            for scheme in schemes:
+                if(FixedDepositMatch.is_within_tenure(input_duration, scheme.tenure)):
+                    for interest_rate_data in scheme.interestRates.all():
+                        if (goal > 20000000 and interest_rate_data.category == 'CATEGORY_2') or interest_rate_data.category == 'CATEGORY_1':
+                            for rate in interest_rate_data.interestRatesList.all():
+                                if(FixedDepositMatch.is_within_tenure(input_duration, rate.tenure)):
+                                    if user_age > 60:
+                                        interest_rate = rate.interestSeniorCitizen
+                                    else:
+                                        interest_rate = rate.interestGeneralPublic
+                                
+                                    irate = interest_rate / 100
+                                    years = int(input_duration.split()[0])
+                                    # Calculate the exponential term
+                                    exponential_term = (1 + irate) ** years
+                                    
+                                    # Calculate the initial amount needed
+                                    initial_amount_needed = goal / exponential_term
+                                    
+                                    # Round off the initial amount to the nearest integer
+                                    rounded_initial_amount = round(initial_amount_needed)
+                                    # Check if the ID is unique, if so, add it to the list
+                                    if scheme.id not in unique_ids:
+                                        selected_entries_fd.append({
+                                            "id": scheme.id,
+                                            "partnerType": scheme.partnerType,
+                                            "institutionType": scheme.institutionType,
+                                            "heading": scheme.heading,
+                                            "logoUrl": scheme.logoUrl,
+                                            "subHeading": scheme.subHeading,
+                                            "desired_investment_amount":rounded_initial_amount,
+                                            "intrest_rate":interest_rate,
+                                            "tenure":rate.tenure
+                                        })
+                                    unique_ids.add(scheme.id)
+            selected_entries_fd.sort(key=lambda x: x['desired_investment_amount'])
+            return Response(selected_entries_fd)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

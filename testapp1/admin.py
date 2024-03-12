@@ -24,3 +24,20 @@ class ChildAdmin(admin.ModelAdmin):
 @admin.register(FundUrls)
 class UrlsAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "url")
+
+
+@admin.register(FDPartner)
+class FDdataAdmin(admin.ModelAdmin):
+    list_display = ("id", "partnerType", "heading")
+
+@admin.register(InterestRate)
+class FDdataAdmin(admin.ModelAdmin):
+    list_display = ("category", "categoryName", "fd_partner")
+
+@admin.register(InterestRateDetail)
+class FDdataAdmin(admin.ModelAdmin):
+    list_display = ("interestGeneralPublic", "interestSeniorCitizen", "tenure","interest_rate")
+
+@admin.register(FAQ)
+class FDdataAdmin(admin.ModelAdmin):
+    list_display = ("title", "description", "bulletPoints","fd_partner")
