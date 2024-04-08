@@ -355,3 +355,23 @@ class FDPartnerSerializer(serializers.Serializer):
     class Meta:
         model = FDPartner
         fields = ['partnerType', 'institutionType', 'heading', 'logoUrl', 'subHeading', 'description', 'featuresHeading', 'interestRatesRange', 'minimumDeposit', 'maximumDeposit', 'lockIn', 'tenure', 'minimumInterestRate', 'maximumInterestRate', 'minimumInterestRateSeniorCitizens', 'maximumInterestRateSeniorCitizens', 'additionalInterestForSeniorCitizen', 'etlink', 'lastRevisedDate', 'lastRevisedDateAbove2Cr', 'partnerDetailsHTML', 'metadataTitle', 'metadataDescription', 'interestRates', 'faqs']
+
+
+class NPSInterestRateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NPSInterestRate
+        fields = ['category', 'code', 'returns_5years']
+
+class NPSSerializer(serializers.ModelSerializer):
+    NPSinterestRates = NPSInterestRateSerializer(many=True)
+
+    class Meta:
+        model = NPSData
+        fields = ['id', 'link', 'name', 'startinfo', 'fund_size', 'NPSinterestRates', 'no_of_subs', 'logo_url']
+
+    def create(self, validated_data):
+        interest_rates_data = validated_data.pop('NPSinterestRates')
+        nps_data = NPSData.objects.create(**validated_data)
+        for rate_data in interest_rates_data:
+            NPSInterestRate.objects.create(nps_data=nps_data, **rate_data)
+        return nps_data

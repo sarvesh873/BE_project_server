@@ -28,7 +28,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-CSRF_TRUSTED_ORIGINS = ['https://web-production-36b4.up.railway.app', 'https://*.railway.app']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://web-production-36b4.up.railway.app', 'https://*.railway.app']
 
 # Application definition
 
@@ -152,3 +152,11 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=7),
 }
+
+# Email configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'sarveshvarade873gmail.com'
+EMAIL_HOST_PASSWORD = "trtd kfvd lmup lbkb"
+EMAIL_USE_TLS = True

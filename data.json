@@ -1,0 +1,156 @@
+// ppf data to be retuned format might add more based on sir feedback
+{
+    "Total Investment": 750000,
+    "Total Interest": 606070,
+    "Maturity Value": 1356070,
+    "Scheme Link": "https://www.nsiindia.gov.in/(S(2ideic21latgdcbrimbchqqo))/InternalPage.aspx?Id_Pk=55"
+}
+
+// ssy
+{
+    "Total Investment": 2250000,
+    "Total Interest": 4932119,
+    "Maturity Value": 7182119,
+    "Scheme Link": "https://www.nsiindia.gov.in/(S(icaeepnc0emp2n55wzmnrz55))/InternalPage.aspx?Id_Pk=89"
+}
+//  Total funds are 1139 ,funds with hybrid category are 171 ,funds with debt category are 387,funds with EQUITY category are 555  
+// COMMODITIES(GOLD INVESTMENT) 22 ,OTHERS 4(issue with the data of this scheme)
+// mutual fund ka same api hit karenge for gold investment just category pass karna hai COMMODITIES(GOLD INVESTMENT)
+// all mutual fund listing we will give this in the mutual fund blog
+[array will coantin no of funds that we pass to the url 
+    http://127.0.0.1:8000/api/all-mf-listing/?size=1
+    {
+      "sId": 16925,
+      "oId": 36,
+      "aId": 9,
+      "name": "Quant Small Cap Fund Direct Plan-Growth",*
+      "amcName": "Quant",
+      "lkn": false,
+      "lockinDays": 0,
+      "isD": true,
+      "isBuyableV2": true,
+      "isDiscoverable": false,
+      "nonDiscoverableReason": "",
+      "asSz": 17193.08568537,*
+      "rtnDet": {
+        "1": 1.07,*
+        "7": 5.14,
+        "30": -0.38,
+        "90": 11.83,
+        "180": 30.65,
+        "365": 73.85,
+        "1095": 42.8,
+        "1825": 37.31,
+        "3650": 21.18
+      },
+      "rskRt": 5,
+      "rtnRt": 5,
+      "rt": 3,
+      "lNv": 256.0352,
+      "sdWebUrl": "/mutual-funds/quant-small-cap-fund-direct-plan-growth/16925",*
+      "parName": "Quant Small Cap Fund",
+      "etmCat": 36,
+      "logo": "https://img.smartspends.com/static/images/amc_logo/quant.png",*
+      "etmRnk": 3,
+      "conRt": 5,
+      "expRat": 0.7,
+      "lDoDt": {
+        "value": "20/07/2022"
+      },
+      "strtDt": {
+        "value": "01/01/2013"
+      },
+      "catScCnt": 20,
+      "dbldays": "1 yrs 8 m",
+      "assetSizeFor": "&#8377;17,193 Crs",*
+      "consistencyRating": 5,
+      "rskratpoint": [*
+        "High",
+        "red-text"
+      ],
+      "schemeAge": "11+ yrs",*
+      "pCatURL": "/mutual-funds/equity",
+      "pCat": "EQUITY",*
+      "catURL": "/mutual-funds/equity/small-cap/36",
+      "catDispName": "Small Cap",*
+      "etmRankDispTheme": "<span class=\"ranking-new\"><strong class=\"item-value\">#1</strong></span> in <span class=\"catName\">Small Cap</span>",
+      "expRatStr": "0.7%",*
+      "defultDuration": 1825,
+      "performanceRanking": {*
+        "reasonDTO": null,
+        "rank": 1,
+        "rankOutOf": 19
+      }
+    }
+  ]
+
+// mutual funds matching to user input
+[
+    {
+      "scheme_id": 27073,
+      "scheme_name": "Invesco India Credit Risk Fund Direct-Growth",*
+      "asSz": "138.94355229",*
+      "rtnDet_1": "-0.06",*
+      "rskRt": "4",
+      "rtnRt": "3",
+      "rt": "3",
+      "lNv": "1891.4095",
+      "sdWebUrl": "https://www.etmoney.com//mutual-funds/invesco-india-credit-risk-fund-direct-growth/27073",*
+      "logo": "https://img.smartspends.com/static/images/amc_logo/invesco.png",*
+      "etmRnk": 2,
+      "conRt": 3.0,
+      "expRat": 0.28,*
+      "assetSizeFor": "₹ 139 Crs",*
+      "pCat": "DEBT",*
+      "consistencyRating": "3",*
+      "rskratpoint": "['High', 'red-text']",*
+      "schemeAge": "9+ yrs",*
+      "catDispName": "Credit Risk",
+      "performanceRank": {
+        "rank": 8,
+        "rankOutOf": 14
+      },
+      "returnpa": "7.72%"*
+    },
+]
+
+// fixed deposit matching to user inout
+{
+    "id": 11,
+    "partnerType": "INDUSIND_BANK",
+    "institutionType": "BANK",*
+    "heading": "IndusInd Bank",*
+    "logoUrl": "https://static.smartspends.com/static/images/providers_logos/bank_indusind.jpg",*
+    "subHeading": "Fixed Deposit (FD) Interest Rates",*
+    "desired_investment_amount": 465116,*
+    "intrest_rate": 7.5,*
+    "tenure": "365 - 539"*
+  },
+
+// all availabel fixed deposit
+{
+    "id": 2,
+    "partnerType": "SBI",
+    "institutionType": "BANK",*
+    "heading": "SBI FD Interest Rates",*
+    "logoUrl": "https://static.smartspends.com/static/images/providers_logos/bank_sbi.jpg",*
+    "subHeading": "3.50% - 7.60%",*
+    "description": "SBI offers FD interest rates of 3.50% - 7.10% p.a. to the general public and 4% - 7.60% p.a. to senior citizens for tenures ranging from 7 days to 10 years.",
+    "featuresHeading": "Features of SBI Bank FD",
+    "interestRatesRange": "3.50% - 7.60%",*
+    "minimumDeposit": "1,000",*
+    "maximumDeposit": "1 Cr",*
+    "lockIn": "12 months",
+    "tenure": "1 yr - 10 yrs",*
+    "minimumInterestRate": 3.5,
+    "maximumInterestRate": 7.1,
+    "minimumInterestRateSeniorCitizens": 4.0,
+    "maximumInterestRateSeniorCitizens": 7.6,
+    "additionalInterestForSeniorCitizen": "Extra 0.5% p.a.",
+    "etlink": "https://www.etmoney.com/fixed-deposit/sbi-bank-fd-rates/2",*
+    "lastRevisedDate": "2023-12-27",
+    "lastRevisedDateAbove2Cr": "2023-12-27",
+    "partnerDetailsHTML": "<h2 class=\"title-plan-section\">About SBI Bank</h2> <p class=\"text-fd\">The State Bank of India is the largest Indian bank with 42 crore customers. It offers a wide list of products and services to customers including savings accounts, fixed deposits, loans and credit cards. It has been ranked as 236th in the Fortune Global 500 list of the world's biggest corporations of 2019. The Fixed Deposit programme by SBI has been rated as FAAA/Stable by CRISIL. This indicates that the FD offering is stable, and it will generate stable and timely returns.</p> <h2 class=\"font-18 dark-gray semi-bold\">Benefits of SBI Fixed Deposit</h2> <ol class=\"nav\">     <li><b>Competitive rate of interest</b> - Investors in SBI fixed deposits can get up to 5.40% rate of interest on their deposits. In case of senior citizens, the interest rate goes up to 6.20%. This rate is comparable to most of the other participants in the market (though it should be said that Bajaj Finance offers rates up to 7.60% for non-senior citizens and 7.85% for senior citizens).</li>     <li><b>Auto renewal facility</b> - SBI gives you the option to automatically renew your FD in case you wish to extend the tenure of your deposit. Your deposit gets renewed for the same time period as the original deposit. This feature is available to certain FD schemes.</li>     <li><b>Minimum deposit of <i class=\"rupee-icon font-14\">&#8377;</i>1000 </b> - The minimum deposit for most FD schemes is only <i class=\"rupee-icon font-14\">&#8377;</i>1,000. This makes it easy for most people in the country to invest. In case of SBI Multi Option FD, the minimum investment is <i class=\"rupee-icon font-14\">&#8377;</i>10,000 and for SBI annuity scheme, it is <i class=\"rupee-icon font-14\">&#8377;</i>25,000.</li>     <li><b>Loan facility available</b> - When you open an FD with SBI, you can also get access to loans up to 90% of the FD's outstanding value. This gives you easy access to capital when you require it. The interest on these loans is between 5.5% to 7.1%.</li> </ul>",
+    "metadataTitle": "SBI FD Interest Rates 2024 - State Bank of India FD Rates",
+    "metadataDescription": "SBI Bank Offers 7.10% for General Public & 7.60% for Senior Citizens for Below 2 crore. Check Latest State Bank of India (SBI) Fixed Deposit (FD) Interest Rates 2024."
+  },

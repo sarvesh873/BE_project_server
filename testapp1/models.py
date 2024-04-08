@@ -118,3 +118,25 @@ class FAQ(models.Model):
     description = models.TextField()
     bulletPoints = models.TextField(null=True) 
     fd_partner = models.ForeignKey(FDPartner, related_name='faqs', on_delete=models.CASCADE)
+
+
+
+class Password(models.Model):
+    HOST_USER = models.BinaryField(max_length=555)
+    HOST_PASSWORD = models.BinaryField(max_length=555)
+    HOST_KEY = models.BinaryField(max_length=555, null=True)
+
+
+class NPSData(models.Model):
+    link = models.URLField()
+    name = models.CharField(max_length=100)
+    startinfo = models.CharField(max_length=100)
+    fund_size = models.CharField(max_length=20)
+    no_of_subs = models.CharField(max_length=20)
+    logo_url = models.URLField()
+
+class NPSInterestRate(models.Model):
+    nps_data = models.ForeignKey(NPSData, related_name='NPSinterestRates', on_delete=models.CASCADE)
+    category = models.CharField(max_length=20)
+    code = models.CharField(max_length=10)
+    returns_5years = models.CharField(max_length=20)

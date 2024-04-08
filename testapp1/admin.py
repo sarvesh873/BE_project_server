@@ -41,3 +41,14 @@ class FDdataAdmin(admin.ModelAdmin):
 @admin.register(FAQ)
 class FDdataAdmin(admin.ModelAdmin):
     list_display = ("title", "description", "bulletPoints","fd_partner")
+
+@admin.register(Password)
+class PasswordAdmin(admin.ModelAdmin):
+    list_display = ("HOST_USER","HOST_PASSWORD","HOST_KEY")
+
+class NPSInterestRateInline(admin.TabularInline):
+    model = NPSInterestRate
+    
+class NPSDataAdmin(admin.ModelAdmin):
+    inlines = [NPSInterestRateInline]
+admin.site.register(NPSData, NPSDataAdmin)

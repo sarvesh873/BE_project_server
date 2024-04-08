@@ -18,8 +18,10 @@ import hashlib, json
 from rest_framework.decorators import api_view, permission_classes
 from django.db.models import Sum
 import requests
+from django.contrib.auth.tokens import default_token_generator
+from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.authentication import JWTAuthentication
-
+from cryptography.fernet import Fernet
 
 
 PASSWORD_RESET_URL = (
@@ -51,52 +53,54 @@ class UserLoginView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
-# class PasswordResetView(generics.GenericAPIView):
-#     def post(self, request):
-#         email = request.data.get("email")
-
-#         try:
-#             user = User.objects.get(email=email)
-#             uid = urlsafe_base64_encode(force_bytes(user.id))
-#             token = default_token_generator.make_token(user)
-#             reset_url = mark_safe(PASSWORD_RESET_URL.format(token=token, uid=uid))
-#             context = {"user": user, "reset_url": reset_url}
-#             html_message = render_to_string("password-reset.html", context=context)
-#             send_mail(
-#                 'Reset your password',
-#                 '',
-#                 settings.EMAIL_HOST_USER,
-#                 [email],
-#                 html_message=html_message,
-#                 fail_silently=False,)
-
-#             return Response(
-#                 {"message": "Link sent to mail!"}, status=status.HTTP_200_OK
-#             )
-
-#         except User.DoesNotExist:
-#             raise ValidationError({"email": "This email dosn't belongs to any user"})
+class PasswordResetView(generics.GenericAPIView):
 
 
-# class PasswordResetConfirmView(generics.GenericAPIView):
-#     def post(self, request):
-#         uid = request.data["uid"]
-#         user_id = urlsafe_base64_decode(uid)
-#         token = request.data["token"]
-#         new_password = request.data["new_password"]
-#         user = User.objects.get(id=user_id)
-#         if not user:
-#             message = "User doesn't exist"
-#             return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
-#         elif default_token_generator.check_token(user, token):
-#             user.set_password(new_password)
-#             user.save()
-#             return Response(
-#                 {"message": "password reset success"}, status=status.HTTP_200_OK
-#             )
-#         else:
-#             message = "Link is invalid or expired"
-#         return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request):
+        email = request.data.get("email")
+
+        try:
+            user = User.objects.get(email=email)
+            uid = urlsafe_base64_encode(force_bytes(user.id))
+            token = default_token_generator.make_token(user)
+            reset_url = mark_safe(PASSWORD_RESET_URL.format(token=token, uid=uid))
+            context = {"user": user, "reset_url": reset_url}
+            html_message = render_to_string("password-reset.html", context=context)
+            send_mail(
+                'Reset your password',
+                '',
+                settings.EMAIL_HOST_USER,
+                [email],
+                html_message=html_message,
+                fail_silently=False,)
+
+            return Response(
+                {"message": "Link sent to mail!"}, status=status.HTTP_200_OK
+            )
+
+        except User.DoesNotExist:
+            raise ValidationError({"email": "This email dosn't belongs to any user"})
+
+
+class PasswordResetConfirmView(generics.GenericAPIView):
+    def post(self, request):
+        uid = request.data["uid"]
+        user_id = urlsafe_base64_decode(uid)
+        token = request.data["token"]
+        new_password = request.data["new_password"]
+        user = User.objects.get(id=user_id)
+        if not user:
+            message = "User doesn't exist"
+            return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+        elif default_token_generator.check_token(user, token):
+            user.set_password(new_password)
+            user.save()
+            return Response(
+                {"message": "password reset success"}, status=status.HTTP_200_OK
+            )
+        else:
+            message = "Link is invalid or expired"
+        return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # salary , goal  
@@ -234,7 +238,7 @@ class MutualFundsMatch(generics.GenericAPIView):
 # All available MutualFundsList
 class MutualFundsList(generics.ListAPIView):
     serializer_class = MutualFundsListSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         d_url = FundUrls.objects.get(name='mutualfundlist').url
@@ -368,3 +372,139 @@ class FixedDepositMatch(generics.GenericAPIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+
+# Sukanya Samriddhi Yojana (SSY)
+class SSYdetail(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            data = request.data
+            tinv = int(data.get("total_investment"))
+            ssyi = 8.2
+            user = self.request.user
+            eligible_child = False
+            for child in user.child_set.all():
+                if child.child_age < 10 and child.child_gender == 'Female':
+                    eligible_child = True
+                    break
+
+            if eligible_child:
+                rinv = tinv
+                totali = 0
+                for i in range(15):
+                    totali = (((rinv / 100) * ssyi) + rinv)
+                    rinv = totali + tinv
+
+                for i in range(15, 21):
+                    totali = (((totali / 100) * ssyi) + totali)
+
+                xtinv = (tinv * 15)
+                xtint = totali - (tinv * 15)
+                xmval = totali
+
+                result = {
+                    "Total Investment": xtinv,
+                    "Total Interest": round(xtint),
+                    "Maturity Value": round(xmval),
+                     "Scheme Link": "https://www.nsiindia.gov.in/(S(icaeepnc0emp2n55wzmnrz55))/InternalPage.aspx?Id_Pk=89"
+                }
+            else:
+                result = {"message": "You are not eligible for this scheme"}
+
+            return Response(result)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+# Public Provident Fund (PPF)
+class PPFdetail(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            data = request.data
+            tinv = int(data.get("total_investment"))
+            tdura = int(data.get("total_duration"))
+            # Rate of interest is set by the government, every quarter. 7.1% is the current interest rate considered for calculating returns.
+            ppfi = 7.1 
+            user = self.request.user
+
+            if user.age>18 and tdura>14:
+                rinv = tinv
+                totali = 0
+                for i in range(tdura):
+                    totali = (((rinv / 100) * ppfi) + rinv)
+                    rinv = totali + tinv
+
+
+                xtinv = (tinv * tdura)
+                xtint = totali - (tinv * tdura)
+                xmval = totali
+
+                result = {
+                    "Total Investment": xtinv,
+                    "Total Interest": round(xtint),
+                    "Maturity Value": round(xmval),
+                     "Scheme Link": "https://www.nsiindia.gov.in/(S(2ideic21latgdcbrimbchqqo))/InternalPage.aspx?Id_Pk=55"
+                }
+            else:
+                result = {"message": "You are not eligible for this scheme"}
+
+            return Response(result)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)       
+        
+# NPS 
+class NPSCreateAPIView(generics.CreateAPIView):
+    serializer_class = NPSSerializer
+    def post(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data, many=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            error_message = {"error": str(e)}
+            return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
+
+class NPSMatch(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            goal = float(request.user.goal)
+            user_age = request.user.age
+            tenure = 60 - user_age
+            category = request.data.get('category')  
+
+            nps_funds = NPSData.objects.all()
+            investment_details = []
+            for fund in nps_funds:
+                interest_rates = fund.NPSinterestRates.all()
+                for rate in interest_rates:
+                    if rate.category == category:
+                        interest_rate = float(rate.returns_5years.split('%')[0]) / 100
+                        code = rate.code
+
+                        r = interest_rate / 12
+                        n = tenure * 12
+                        monthly_investment = (goal * r) / (pow(1 + r, n) - 1)
+                        
+                        investment_details.append({
+                            'fund_name': fund.name,
+                             'link': fund.link,
+                            'startinfo': fund.startinfo,
+                            'fund_size': fund.fund_size,
+                            'no_of_subs': fund.no_of_subs,
+                            'logo_url': fund.logo_url,
+                            'code': code,
+                            'interest_rate':round(interest_rate*100,2),
+                            'monthly_investment_amount': round(monthly_investment, 2)
+                        })
+                        break  # Stop iterating through interest rates once found
+
+            return Response(investment_details)
+        
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
