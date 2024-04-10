@@ -28,7 +28,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
+CORS_ORIGIN_ALLOW_ALL = True
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://web-production-98b9a.up.railway.app/', 'https://*.railway.app', 'http://localhost:3000' ]
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000',
+    'https://web-production-98b9a.up.railway.app',
+]
 
 # Application definition
 
@@ -58,6 +63,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'test1.urls'
