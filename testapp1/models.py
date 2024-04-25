@@ -14,10 +14,12 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length = 10, null = True)
     salary = models.IntegerField(null=True)
-    goal = models.IntegerField(null=True)
+    goalAmount = models.IntegerField(null=True)
+    goalDuration = models.CharField(null=True, max_length=20)
     age = models.IntegerField(null=True)
     gender = models.CharField(max_length = 10, choices = GENDER_CHOICES, null=True)
     profession = models.CharField(max_length = 12, null = True)
+    location = models.CharField(max_length = 12, null = True)
     family_no_dep = models.IntegerField(null = True)
 
     # New fields for child information
@@ -26,11 +28,14 @@ class User(AbstractUser):
 
 
     # New fields for loan details
-    has_loan = models.BooleanField(default=False)
-    loan_duration = models.IntegerField(null=True)
-    loan_emi = models.IntegerField(null=True)
+    hasLoan = models.BooleanField(default=False)
+    laondura = models.IntegerField(null=True)
+    loanAmount = models.IntegerField(null=True)
 
+    hasInsurance  = models.BooleanField(default=False)
+    insuranceAmount = models.IntegerField(null=True)
 
+    monthlyExpenditure = models.IntegerField(null=True)
 
     @property
     def full_name(self):

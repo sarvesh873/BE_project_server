@@ -27,4 +27,5 @@ urlpatterns = [
     # Nps 
     path('create-nps/', NPSCreateAPIView.as_view(), name='nps-data'),
     path('nps-match/', NPSMatch.as_view(), name='nps_match'),
+    path('nps/', NPSListView.as_view(), name='nps-list'),
 ]

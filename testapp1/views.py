@@ -22,6 +22,7 @@ from django.contrib.auth.tokens import default_token_generator
 from rest_framework.exceptions import ValidationError
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from cryptography.fernet import Fernet
+from datetime import datetime
 
 
 PASSWORD_RESET_URL = (
@@ -169,11 +170,28 @@ class MutualFundsMatch(generics.GenericAPIView):
 
     def post(self, request):
         # Get data from the request
-        input_returns = request.data.get('input_returns')
-        input_duration = request.data.get('input_duration')
+        input_returns = "sipReturns"
+        
+        data = request.data
+        user = self.request.user
+        # print(data.get("input_duration"),user.goalDuration)
+        if data.get("input_duration") is not None and data.get("input_duration") != 'NaN' and  data.get("input_duration") != 0: 
+            input_duration = data.get("input_duration")
+        else:
+            
+            input_duration = user.goalDuration
+        # input_duration = request.data.get('input_duration')
         input_days = MutualFundsMatch.convert_to_days(input_duration)
-        input_amt = request.data.get('input_amt')
-        goal = self.request.user.goal
+        
+        user_profile = User.objects.get(username=user.username)
+        profile_serializer = ProfileSerializer(instance=user_profile)
+        if data.get("input_amt") is not None and data.get("input_amt") != 'NaN' and  data.get("input_amt") != 0:
+            input_amt = int(data.get("input_amt"))
+        else:
+            input_amt = int(profile_serializer.get_total_investment(user))
+        # print(input_amt)
+        # input_amt = request.data.get('input_amt')
+        goal = user.goalAmount
         input_risk = request.data.get('input_risk')
         input_cat = request.data.get('input_cat')
 
@@ -243,8 +261,8 @@ class MutualFundsList(generics.ListAPIView):
     def get_queryset(self):
         d_url = FundUrls.objects.get(name='mutualfundlist').url
 
-        size = self.request.query_params.get('size', 20)  # Default size is 20
-        url = f"{d_url}?size={size}"
+        size = self.request.query_params.get('size', 100)  # Default size is 20
+        url = f"{d_url}?size={1139}"
 
         response = requests.get(url)
         # Total funds are 1139 ,funds with hybrid category are 171 ,funds with debt category are 387,funds with EQUITY category are 555  
@@ -257,7 +275,7 @@ class MutualFundsList(generics.ListAPIView):
             # If pCat is provided, filter based on pCat
             if pCat:
                 filtered_funds = [fund for fund in data.get("mfSchemeMiniList", []) if fund.get('pCat') == pCat]
-                return filtered_funds
+                return filtered_funds[:int(size)] 
             else:
                 # Return all funds if pCat is not provided the list of companies from the JSON data
                 return data.get("mfSchemeMiniList", [])
@@ -294,11 +312,33 @@ class FDPartnerCreateAPIView(APIView):
 
 
 # Fixed Deposits to user data   
+class FixedDepositList(generics.ListAPIView):
+    queryset = FDPartner.objects.all()  # Retrieve all objects from FDPartner model
+    # we have 16 fdpartners with all of the data
+    serializer_class = FixedDepositSerializer 
+
+# to create new Fixed Deposit
+class FDPartnerCreateAPIView(APIView):
+    serializer_class = FDPartnerSerializer
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            serializer = self.serializer_class(data=request.data.get('fdPartnerDetails', []), many=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            error_message = {"error": str(e)}
+            return Response(error_message, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Fixed Deposits to user data   
 class FixedDepositMatch(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = FDPartnerSerializer
 
-    #function to check if the users duration is withun the fund tenure  
+    @staticmethod
     def is_within_tenure(input_duration: str, tenure: str) -> bool:
         # Extract lower and upper bounds from the tenure string
         tenure_values = [int(value.split()[0]) for value in tenure.split(' - ')]
@@ -317,14 +357,20 @@ class FixedDepositMatch(generics.GenericAPIView):
             return int(input_value) == int(tenure_values[0] * 12)
         else:
             return int(tenure_values[0] * 12) <= int(input_value) <= int(tenure_values[1] * 12)
-    # Example usage: input_duration = "1 yrs" tenure = "365 - 449" print(is_within_tenure(input_duration, tenure))  # Output: True input_duration = "5 yrs" tenure = "1 yr - 10 yrs" print(is_within_tenure(input_duration, tenure))  # Output: True input_duration = "46 months" tenure = "1096 - 1679" print(is_within_tenure(input_duration, tenure))  # Output: True
 
     def post(self, request):
         try:
             data = request.data
-            input_duration = data.get('input_duration')
+            
+            # print(data.get("input_duration"),self.request.user.goalDuration)
+            if data.get("input_duration") is not None and data.get("input_duration") != 'NaN' and  data.get("input_duration") != 0: 
+                input_duration = data.get("input_duration")
+            else:
+                
+                input_duration = self.request.user.goalDuration+" yrs"
+            # input_duration = data.get('input_duration')
             input_amt = data.get('input_amt')
-            goal = self.request.user.goal
+            goal = self.request.user.goalAmount
             user_age = self.request.user.age
 
             selected_entries_fd = []
@@ -333,16 +379,16 @@ class FixedDepositMatch(generics.GenericAPIView):
             schemes = FDPartner.objects.all()
 
             for scheme in schemes:
-                if(FixedDepositMatch.is_within_tenure(input_duration, scheme.tenure)):
+                if self.is_within_tenure(input_duration, scheme.tenure):
                     for interest_rate_data in scheme.interestRates.all():
                         if (goal > 20000000 and interest_rate_data.category == 'CATEGORY_2') or interest_rate_data.category == 'CATEGORY_1':
                             for rate in interest_rate_data.interestRatesList.all():
-                                if(FixedDepositMatch.is_within_tenure(input_duration, rate.tenure)):
+                                if self.is_within_tenure(input_duration, rate.tenure):
                                     if user_age > 60:
                                         interest_rate = rate.interestSeniorCitizen
                                     else:
                                         interest_rate = rate.interestGeneralPublic
-                                
+                                    
                                     irate = interest_rate / 100
                                     years = int(input_duration.split()[0])
                                     # Calculate the exponential term
@@ -356,12 +402,19 @@ class FixedDepositMatch(generics.GenericAPIView):
                                     # Check if the ID is unique, if so, add it to the list
                                     if scheme.id not in unique_ids:
                                         selected_entries_fd.append({
-                                            "id": scheme.id,
+                                           "id": scheme.id,
+                                            "heading":scheme.heading,
+                                            "etlink":scheme.etlink,
+                                            "minimumDeposit":scheme.minimumDeposit,
+                                            "maximumDeposit":scheme.maximumDeposit,
+                                            "interestRatesRange":scheme.interestRatesRange,
+                                            "additionalInterestForSeniorCitizen":scheme.additionalInterestForSeniorCitizen,
                                             "partnerType": scheme.partnerType,
                                             "institutionType": scheme.institutionType,
                                             "heading": scheme.heading,
                                             "logoUrl": scheme.logoUrl,
                                             "subHeading": scheme.subHeading,
+                                            "description" : scheme.description,
                                             "desired_investment_amount":rounded_initial_amount,
                                             "intrest_rate":interest_rate,
                                             "tenure":rate.tenure
@@ -374,13 +427,26 @@ class FixedDepositMatch(generics.GenericAPIView):
             return Response({"error": str(e)}, status=500)
 
 
+
 # Sukanya Samriddhi Yojana (SSY)
 class SSYdetail(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
         try:
             data = request.data
-            tinv = int(data.get("total_investment"))
+            
+            user = self.request.user
+            user_profile = User.objects.get(username=user.username)
+            profile_serializer = ProfileSerializer(instance=user_profile)
+            print(data.get("total_investment"))
+            if data.get("total_investment") is not None and data.get("total_investment") != 'NaN' and  data.get("total_investment") != 0:
+                tinv = int(data.get("total_investment"))
+            else:
+                tinv = min((profile_serializer.get_total_investment(user) * 12), 150000)
+                
+            tinv = max(tinv,250)
+            print(tinv)
+            # tinv = int(data.get("total_investment"))
             ssyi = 8.2
             user = self.request.user
             eligible_child = False
@@ -402,11 +468,13 @@ class SSYdetail(generics.GenericAPIView):
                 xtinv = (tinv * 15)
                 xtint = totali - (tinv * 15)
                 xmval = totali
-
+                current_year = datetime.now().year
                 result = {
+                    "Total Yearly Investment" : tinv,
                     "Total Investment": xtinv,
                     "Total Interest": round(xtint),
                     "Maturity Value": round(xmval),
+                    "Year of Maturity": current_year+21,
                      "Scheme Link": "https://www.nsiindia.gov.in/(S(icaeepnc0emp2n55wzmnrz55))/InternalPage.aspx?Id_Pk=89"
                 }
             else:
@@ -417,18 +485,38 @@ class SSYdetail(generics.GenericAPIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+import re
 # Public Provident Fund (PPF)
 class PPFdetail(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    def convert_to_days(input_string):
+        parts = input_string.lower().split()
+        duration = int(parts[0])
+        return duration
     def post(self, request):
         try:
+            
             data = request.data
-            tinv = int(data.get("total_investment"))
-            tdura = int(data.get("total_duration"))
+            user = self.request.user
+            user_profile = User.objects.get(username=user.username)
+            profile_serializer = ProfileSerializer(instance=user_profile)
+            if data.get("total_investment") is not None and data.get("total_investment") != 'NaN' and  data.get("total_investment") != 0:
+                tinv = int(data.get("total_investment"))
+            else:
+                tinv = min(int(profile_serializer.get_total_investment(user) * 12), 150000)
+            
+            print("tinv",tinv)
+            # tinv = int(data.get("total_investment"))
+            # tdura = int(data.get("total_duration"))
+            if data.get("total_duration") is not None and data.get("total_duration") != 'NaN'  and  data.get("total_duration") != 0:
+                tdura = int(data.get("total_duration"))
+            else:
+                tdura = PPFdetail.convert_to_days(user.goalDuration)
+            # tdura = int(data.get("total_duration"))
+            print(tdura)
             # Rate of interest is set by the government, every quarter. 7.1% is the current interest rate considered for calculating returns.
             ppfi = 7.1 
-            user = self.request.user
-
+            
             if user.age>18 and tdura>14:
                 rinv = tinv
                 totali = 0
@@ -440,8 +528,10 @@ class PPFdetail(generics.GenericAPIView):
                 xtinv = (tinv * tdura)
                 xtint = totali - (tinv * tdura)
                 xmval = totali
+                
 
                 result = {
+                    "Total Yearly Investment" : tinv,
                     "Total Investment": xtinv,
                     "Total Interest": round(xtint),
                     "Maturity Value": round(xmval),
@@ -473,7 +563,7 @@ class NPSMatch(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
         try:
-            goal = float(request.user.goal)
+            goal = float(request.user.goalAmount)
             user_age = request.user.age
             tenure = 60 - user_age
             category = request.data.get('category')  
@@ -499,6 +589,7 @@ class NPSMatch(generics.GenericAPIView):
                             'no_of_subs': fund.no_of_subs,
                             'logo_url': fund.logo_url,
                             'code': code,
+                            'category':category,
                             'interest_rate':round(interest_rate*100,2),
                             'monthly_investment_amount': round(monthly_investment, 2)
                         })
@@ -508,3 +599,8 @@ class NPSMatch(generics.GenericAPIView):
         
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class NPSListView(generics.ListAPIView):
+    queryset = NPSData.objects.all()
+    serializer_class = NPSSerializer

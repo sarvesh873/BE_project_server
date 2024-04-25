@@ -8,6 +8,7 @@ class TokenPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
+        token['username'] = user.username
         return token
     
 class UserSerializer(serializers.ModelSerializer):
@@ -78,7 +79,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     # is_superuser = serializers.BooleanField(read_only=True)
     children = serializers.SerializerMethodField()
     family = serializers.SerializerMethodField()
-
+    total_investment= serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = [
@@ -89,18 +90,24 @@ class ProfileSerializer(serializers.ModelSerializer):
             # "is_admin",
             # "is_superuser",
             "salary",
-            "goal",
+            "goalAmount",
+            "goalDuration",
+            "location",
+            "monthlyExpenditure",
             "age",
             "gender",
             "profession",
             "family_no_dep",
             "has_child",
             "num_children",
-            "has_loan",
-            "loan_duration",
-            "loan_emi",
+            "hasLoan",
+            "laondura",
+            "loanAmount",
+            "hasInsurance",
+            "insuranceAmount",
             "children",  # Include the child information in the serializer
-            "family"
+            "family",
+            "total_investment" 
         ]
 
     def get_children(self, obj):
@@ -153,6 +160,20 @@ class ProfileSerializer(serializers.ModelSerializer):
             family, created = Family.objects.update_or_create(user=instance, defaults=fami_data)
         
         return instance
+    
+    def get_total_investment(self, obj):
+        loan_emi = obj.loanAmount if obj.loanAmount else 0
+        insuranceAmount= obj.insuranceAmount if obj.insuranceAmount else 0
+        children_qs = Child.objects.filter(user=obj)
+        child_edu_expi = sum(child.child_edu_expi for child in children_qs)
+        family_qs = Family.objects.filter(user=obj)
+        family_med_expi = sum(family.family_med_expi for family in family_qs)
+        total_expenditure = loan_emi + child_edu_expi + family_med_expi + insuranceAmount + obj.monthlyExpenditure if obj.monthlyExpenditure else 0
+        salary = obj.salary if obj.salary else 0
+        total_investment = round(salary/12)-total_expenditure
+        # print(total_investment,total_expenditure)
+        return round(total_investment*0.4)
+
 
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
