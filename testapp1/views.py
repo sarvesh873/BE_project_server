@@ -39,9 +39,12 @@ class UserRegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         refresh = RefreshToken.for_user(user)
+        access_token = refresh.access_token
+        access_token.payload['username'] = user.username
+
         token_pair = {
             'refresh': str(refresh),
-            'access': str(refresh.access_token),
+            'access': str(access_token),
         }
         return Response(token_pair, status=status.HTTP_201_CREATED)
 
