@@ -29,10 +29,11 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 CORS_ORIGIN_ALLOW_ALL = True
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://web-production-98b9a.up.railway.app/', 'https://*.railway.app', 'http://localhost:3000' ]
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','https://web-production-98b9a.up.railway.app/', 'https://*.railway.app', 'http://localhost:3000' 'https://finvise.netlify.app']
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',
     'https://web-production-98b9a.up.railway.app',
+    'https://finvise.netlify.app',
 ]
 
 # Application definition
