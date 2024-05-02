@@ -396,3 +396,10 @@ class NPSSerializer(serializers.ModelSerializer):
         for rate_data in interest_rates_data:
             NPSInterestRate.objects.create(nps_data=nps_data, **rate_data)
         return nps_data
+    
+
+
+class UserFeedbackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserFeedback
+        fields = ['first_name', 'email', 'subject', 'description']

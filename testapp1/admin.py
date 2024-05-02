@@ -52,3 +52,8 @@ class NPSInterestRateInline(admin.TabularInline):
 class NPSDataAdmin(admin.ModelAdmin):
     inlines = [NPSInterestRateInline]
 admin.site.register(NPSData, NPSDataAdmin)
+
+@admin.register(UserFeedback)
+
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ('first_name', 'email', 'subject', 'created_at')

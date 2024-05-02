@@ -607,3 +607,30 @@ class NPSMatch(generics.GenericAPIView):
 class NPSListView(generics.ListAPIView):
     queryset = NPSData.objects.all()
     serializer_class = NPSSerializer
+
+
+class UserFeedbackView(generics.CreateAPIView):
+    serializer_class = UserFeedbackSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            first_name = serializer.validated_data.get('first_name')
+            subject = serializer.validated_data.get('subject')
+            description = serializer.validated_data.get('description')
+            email = serializer.validated_data.get('email')
+
+            email_subject = f"{first_name} - {subject}"
+
+            email_body = f"Hello Finvise, you have a suggestion from {first_name}:\n\n{description}\n\nFrom: {email}"
+
+            send_mail(
+                email_subject,
+                email_body,
+                settings.EMAIL_HOST_USER,
+                ['sarveshvarade873@gmail.com'],
+                fail_silently=False,
+            )
+            return Response(status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
