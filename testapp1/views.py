@@ -182,7 +182,7 @@ class MutualFundsMatch(generics.GenericAPIView):
             input_duration = data.get("input_duration")
         else:
             
-            input_duration = user.goalDuration +"years"
+            input_duration = user.goalDuration +" years"
         # input_duration = request.data.get('input_duration')
         input_days = MutualFundsMatch.convert_to_days(input_duration)
         
